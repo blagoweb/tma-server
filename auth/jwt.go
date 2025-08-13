@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"sort"
@@ -63,6 +64,17 @@ func (j *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
+// TelegramUserData represents the user data structure from Telegram init_data
+type TelegramUserData struct {
+	ID                int64  `json:"id"`
+	FirstName         string `json:"first_name"`
+	LastName          string `json:"last_name"`
+	Username          string `json:"username"`
+	LanguageCode      string `json:"language_code"`
+	AllowsWriteToPM   bool   `json:"allows_write_to_pm"`
+	PhotoURL          string `json:"photo_url"`
+}
+
 // ValidateTelegramInitData validates Telegram Mini App init data
 func ValidateTelegramInitData(initData, botToken string) (*models.TelegramUser, error) {
 	if initData == "" {
@@ -87,17 +99,21 @@ func ValidateTelegramInitData(initData, botToken string) (*models.TelegramUser, 
 		return nil, fmt.Errorf("user data not found in init_data")
 	}
 
-	// Parse user JSON (simplified - in production you'd use proper JSON parsing)
-	// For now, we'll extract basic info from the query string
-	userIDStr := values.Get("user_id")
-	if userIDStr == "" {
-		return nil, fmt.Errorf("user_id not found in init_data")
+	// URL decode the user string
+	decodedUserStr, err := url.QueryUnescape(userStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode user data: %w", err)
 	}
 
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user_id: %w", err)
+	fmt.Printf("Decoded user string: %s\n", decodedUserStr)
+
+	// Parse user JSON
+	var userData TelegramUserData
+	if err := json.Unmarshal([]byte(decodedUserStr), &userData); err != nil {
+		return nil, fmt.Errorf("failed to parse user JSON: %w", err)
 	}
+
+	fmt.Printf("Parsed user data: %+v\n", userData)
 
 	// Validate hash if bot token is provided
 	if botToken != "" {
@@ -116,10 +132,10 @@ func ValidateTelegramInitData(initData, botToken string) (*models.TelegramUser, 
 	}
 
 	user := &models.TelegramUser{
-		ID:        userID,
-		Username:  values.Get("username"),
-		FirstName: values.Get("first_name"),
-		LastName:  values.Get("last_name"),
+		ID:        userData.ID,
+		Username:  userData.Username,
+		FirstName: userData.FirstName,
+		LastName:  userData.LastName,
 	}
 
 	return user, nil
