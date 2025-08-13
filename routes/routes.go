@@ -32,6 +32,7 @@ func SetupRoutes(
 		auth := api.Group("/auth")
 		{
 			auth.POST("/telegram", authHandler.Auth)
+			auth.POST("/telegram/test", authHandler.TestAuth) // Test endpoint without hash validation
 		}
 
 		// Protected routes (authentication required)

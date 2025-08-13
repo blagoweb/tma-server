@@ -69,11 +69,17 @@ func ValidateTelegramInitData(initData, botToken string) (*models.TelegramUser, 
 		return nil, fmt.Errorf("init_data is empty")
 	}
 
+	// Log the received init data for debugging
+	fmt.Printf("Received initData: %s\n", initData)
+
 	// Parse the init data
 	values, err := url.ParseQuery(initData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse init_data: %w", err)
 	}
+
+	// Log parsed values for debugging
+	fmt.Printf("Parsed values: %+v\n", values)
 
 	// Extract user data
 	userStr := values.Get("user")
@@ -100,9 +106,13 @@ func ValidateTelegramInitData(initData, botToken string) (*models.TelegramUser, 
 			return nil, fmt.Errorf("hash not found in init_data")
 		}
 
+		fmt.Printf("Validating hash: %s\n", hash)
 		if !validateHash(values, hash, botToken) {
 			return nil, fmt.Errorf("invalid hash")
 		}
+		fmt.Printf("Hash validation successful\n")
+	} else {
+		fmt.Printf("Skipping hash validation (no bot token provided)\n")
 	}
 
 	user := &models.TelegramUser{

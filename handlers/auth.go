@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,17 @@ func NewAuthHandler(db *sql.DB, jwtManager *auth.JWTManager, botToken string) *A
 func (h *AuthHandler) Auth(c *gin.Context) {
 	var req models.AuthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+			"details": err.Error(),
+			"received": c.Request.Body,
+		})
+		return
+	}
+
+	// Log the received init data for debugging
+	if req.InitData == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "init_data is required"})
 		return
 	}
 
@@ -59,6 +70,75 @@ func (h *AuthHandler) Auth(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// TestAuth handles test authentication without hash validation
+func (h *AuthHandler) TestAuth(c *gin.Context) {
+	var req models.AuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	if req.InitData == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "init_data is required"})
+		return
+	}
+
+	// Parse init data manually for testing
+	values, err := url.ParseQuery(req.InitData)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse init_data: " + err.Error()})
+		return
+	}
+
+	// Extract user data
+	userIDStr := values.Get("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id not found in init_data"})
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id: " + err.Error()})
+		return
+	}
+
+	telegramUser := &models.TelegramUser{
+		ID:        userID,
+		Username:  values.Get("username"),
+		FirstName: values.Get("first_name"),
+		LastName:  values.Get("last_name"),
+	}
+
+	// Get or create user
+	user, err := h.getOrCreateUser(telegramUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process user: " + err.Error()})
+		return
+	}
+
+	// Generate JWT token
+	token, err := h.jwtManager.GenerateToken(*user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	response := models.AuthResponse{
+		Token: token,
+		User:  *user,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Test authentication successful",
+		"data": response,
+		"parsed_values": values,
+	})
 }
 
 // GetProfile returns current user profile
