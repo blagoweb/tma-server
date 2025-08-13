@@ -22,7 +22,7 @@ type TelegramUser struct {
 }
 
 type AuthRequest struct {
-	InitData string `json:"init_data" binding:"required"`
+	InitData string `json:"init_data"`
 }
 
 type AuthResponse struct {
