@@ -1,0 +1,14 @@
+# Database
+DATABASE_URL=postgresql://postgres:lmHavNBfkyZFkMNiDLZEXCyslFhHXscC@caboose.proxy.rlwy.net:27897/railway
+
+# JWT Secret (generate a strong secret for production)
+JWT_SECRET=WcqPIKELKOwRdmilVkGpsjn/LG+UZaaTk19E4m+qBHc=
+
+# Server
+PORT=8080
+
+# Telegram Bot Token (optional, for additional verification)
+TELEGRAM_BOT_TOKEN=8478838035:AAGToSJ5wwT5HD5I7O4Y1YIT_CkZFCSQEJQ
+
+# Environment
+ENV=development
