@@ -3,8 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -89,31 +87,11 @@ func (h *AuthHandler) TestAuth(c *gin.Context) {
 		return
 	}
 
-	// Parse init data manually for testing
-	values, err := url.ParseQuery(req.InitData)
+	// Use the same validation logic as the main Auth handler, but skip hash validation
+	telegramUser, err := auth.ValidateTelegramInitData(req.InitData, "") // Empty bot token skips hash validation
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse init_data: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Telegram data: " + err.Error()})
 		return
-	}
-
-	// Extract user data
-	userIDStr := values.Get("user_id")
-	if userIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id not found in init_data"})
-		return
-	}
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id: " + err.Error()})
-		return
-	}
-
-	telegramUser := &models.TelegramUser{
-		ID:        userID,
-		Username:  values.Get("username"),
-		FirstName: values.Get("first_name"),
-		LastName:  values.Get("last_name"),
 	}
 
 	// Get or create user
@@ -138,7 +116,6 @@ func (h *AuthHandler) TestAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Test authentication successful",
 		"data": response,
-		"parsed_values": values,
 	})
 }
 
