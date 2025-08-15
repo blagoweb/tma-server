@@ -27,7 +27,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(db.DB, jwtManager, cfg.TelegramBotToken)
-	pagesHandler := handlers.NewpagesHandler(db.DB)
+	pagesHandler := handlers.NewPagesHandler(db.DB)
 
 	// Setup routes
 	router := routes.SetupRoutes(authHandler, pagesHandler, jwtManager)

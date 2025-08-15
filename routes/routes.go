@@ -9,7 +9,7 @@ import (
 
 func SetupRoutes(
 	authHandler *handlers.AuthHandler,
-	pagesHandler *handlers.pagesHandler,
+	pagesHandler *handlers.PagesHandler,
 	jwtManager *auth.JWTManager,
 ) *gin.Engine {
 	router := gin.Default()
@@ -48,11 +48,11 @@ func SetupRoutes(
 			// Pages routes
 			pages := protected.Group("/pages")
 			{
-				pages.GET("", pagesHandler.Getpages)
-				pages.GET("/:id", pagesHandler.Getpage)
-				pages.POST("", pagesHandler.Createpage)
-				pages.PUT("/:id", pagesHandler.Updatepage)
-				pages.DELETE("/:id", pagesHandler.Deletepage)
+				pages.GET("", pagesHandler.GetPages)
+				pages.GET("/:id", pagesHandler.GetPage)
+				pages.POST("", pagesHandler.CreatePage)
+				pages.PUT("/:id", pagesHandler.UpdatePage)
+				pages.DELETE("/:id", pagesHandler.DeletePage)
 			}
 		}
 	}
