@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"tma/models"
+
+	"github.com/gin-gonic/gin"
 )
 
 type PagesHandler struct {
@@ -32,7 +33,7 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 		WHERE user_id = $1 
 		ORDER BY created_at DESC
 	`
-	
+
 	rows, err := h.db.Query(query, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pages"})
@@ -40,7 +41,7 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var pages []models.Page
+	pages := make([]models.Page, 0)
 	for rows.Next() {
 		var page models.Page
 		err := rows.Scan(
@@ -76,13 +77,13 @@ func (h *PagesHandler) GetPage(c *gin.Context) {
 		FROM pages
 		WHERE id = $1 AND user_id = $2
 	`
-	
+
 	var page models.Page
 	err = h.db.QueryRow(query, pageID, userID).Scan(
 		&page.ID, &page.UserID, &page.Title, &page.Description,
 		&page.Status, &page.CreatedAt, &page.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found"})
@@ -114,13 +115,13 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		VALUES ($1, $2, $3, 'active')
 		RETURNING id, user_id, title, description, status, created_at, updated_at
 	`
-	
+
 	var page models.Page
 	err := h.db.QueryRow(query, userID, req.Title, req.Description).Scan(
 		&page.ID, &page.UserID, &page.Title, &page.Description,
 		&page.Status, &page.CreatedAt, &page.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create page"})
 		return
@@ -185,7 +186,7 @@ func (h *PagesHandler) UpdatePage(c *gin.Context) {
 		&page.ID, &page.UserID, &page.Title, &page.Description,
 		&page.Status, &page.CreatedAt, &page.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found"})
@@ -213,7 +214,7 @@ func (h *PagesHandler) DeletePage(c *gin.Context) {
 	}
 
 	query := `DELETE FROM pages WHERE id = $1 AND user_id = $2`
-	
+
 	result, err := h.db.Exec(query, pageID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete page"})
