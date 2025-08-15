@@ -37,11 +37,11 @@ tma/
 - `GET /api/v1/user/profile` - Получить профиль пользователя
 
 ### Элементы (требует JWT)
-- `GET /api/v1/items` - Получить все элементы пользователя
-- `GET /api/v1/items/:id` - Получить элемент по ID
-- `POST /api/v1/items` - Создать новый элемент
-- `PUT /api/v1/items/:id` - Обновить элемент
-- `DELETE /api/v1/items/:id` - Удалить элемент
+- `GET /api/v1/pages` - Получить все элементы пользователя
+- `GET /api/v1/pages/:id` - Получить элемент по ID
+- `POST /api/v1/pages` - Создать новый элемент
+- `PUT /api/v1/pages/:id` - Обновить элемент
+- `DELETE /api/v1/pages/:id` - Удалить элемент
 
 ### Система
 - `GET /health` - Проверка состояния сервера
@@ -159,7 +159,7 @@ const { token, user } = await response.json();
 3. Используйте полученный токен в заголовке `Authorization`:
 
 ```javascript
-const response = await fetch('https://your-app.railway.app/api/v1/items', {
+const response = await fetch('https://your-app.railway.app/api/v1/pages', {
   headers: {
     'Authorization': `Bearer ${token}`
   }
@@ -170,7 +170,7 @@ const response = await fetch('https://your-app.railway.app/api/v1/items', {
 
 #### Создание элемента
 ```bash
-curl -X POST https://your-app.railway.app/api/v1/items \
+curl -X POST https://your-app.railway.app/api/v1/pages \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -181,7 +181,7 @@ curl -X POST https://your-app.railway.app/api/v1/items \
 
 #### Получение элементов
 ```bash
-curl -X GET https://your-app.railway.app/api/v1/items \
+curl -X GET https://your-app.railway.app/api/v1/pages \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

@@ -27,10 +27,10 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(db.DB, jwtManager, cfg.TelegramBotToken)
-	itemsHandler := handlers.NewItemsHandler(db.DB)
+	pagesHandler := handlers.NewpagesHandler(db.DB)
 
 	// Setup routes
-	router := routes.SetupRoutes(authHandler, itemsHandler, jwtManager)
+	router := routes.SetupRoutes(authHandler, pagesHandler, jwtManager)
 
 	// Start server
 	log.Printf("Starting server on port %s", cfg.Port)

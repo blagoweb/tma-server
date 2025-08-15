@@ -59,9 +59,9 @@ func initTables(db *sql.DB) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
 
-	// Create items table (example for your app)
-	createItemsTable := `
-	CREATE TABLE IF NOT EXISTS items (
+	// Create pages table (example for your app)
+	createPagesTable := `
+	CREATE TABLE IF NOT EXISTS pages (
 		id SERIAL PRIMARY KEY,
 		user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
 		title VARCHAR(255) NOT NULL,
@@ -71,7 +71,7 @@ func initTables(db *sql.DB) error {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
 
-	tables := []string{createUsersTable, createSessionsTable, createItemsTable}
+	tables := []string{createUsersTable, createSessionsTable, createPagesTable}
 
 	for _, table := range tables {
 		if _, err := db.Exec(table); err != nil {

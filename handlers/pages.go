@@ -10,16 +10,16 @@ import (
 	"tma/models"
 )
 
-type ItemsHandler struct {
+type PagesHandler struct {
 	db *sql.DB
 }
 
-func NewItemsHandler(db *sql.DB) *ItemsHandler {
-	return &ItemsHandler{db: db}
+func NewPagesHandler(db *sql.DB) *PagesHandler {
+	return &PagesHandler{db: db}
 }
 
-// GetItems returns all items for the authenticated user
-func (h *ItemsHandler) GetItems(c *gin.Context) {
+// GetPages returns all pages for the authenticated user
+func (h *PagesHandler) GetPages(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -28,122 +28,122 @@ func (h *ItemsHandler) GetItems(c *gin.Context) {
 
 	query := `
 		SELECT id, user_id, title, description, status, created_at, updated_at
-		FROM items 
+		FROM pages
 		WHERE user_id = $1 
 		ORDER BY created_at DESC
 	`
 	
 	rows, err := h.db.Query(query, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pages"})
 		return
 	}
 	defer rows.Close()
 
-	var items []models.Item
+	var pages []models.Page
 	for rows.Next() {
-		var item models.Item
+		var page models.Page
 		err := rows.Scan(
-			&item.ID, &item.UserID, &item.Title, &item.Description,
-			&item.Status, &item.CreatedAt, &item.UpdatedAt,
+			&page.ID, &page.UserID, &page.Title, &page.Description,
+			&page.Status, &page.CreatedAt, &page.UpdatedAt,
 		)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan item"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan page"})
 			return
 		}
-		items = append(items, item)
+		pages = append(pages, page)
 	}
 
-	c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, pages)
 }
 
-// GetItem returns a specific item by ID
-func (h *ItemsHandler) GetItem(c *gin.Context) {
+// GetPage returns a specific page by ID
+func (h *PagesHandler) GetPage(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	itemID, err := strconv.Atoi(c.Param("id"))
+	pageID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page ID"})
 		return
 	}
 
 	query := `
 		SELECT id, user_id, title, description, status, created_at, updated_at
-		FROM items 
+		FROM pages
 		WHERE id = $1 AND user_id = $2
 	`
 	
-	var item models.Item
-	err = h.db.QueryRow(query, itemID, userID).Scan(
-		&item.ID, &item.UserID, &item.Title, &item.Description,
-		&item.Status, &item.CreatedAt, &item.UpdatedAt,
+	var page models.Page
+	err = h.db.QueryRow(query, pageID, userID).Scan(
+		&page.ID, &page.UserID, &page.Title, &page.Description,
+		&page.Status, &page.CreatedAt, &page.UpdatedAt,
 	)
 	
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch item"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch page"})
 		return
 	}
 
-	c.JSON(http.StatusOK, item)
+	c.JSON(http.StatusOK, page)
 }
 
-// CreateItem creates a new item
-func (h *ItemsHandler) CreateItem(c *gin.Context) {
+// CreatePage creates a new page
+func (h *PagesHandler) CreatePage(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	var req models.CreateItemRequest
+	var req models.CreatePageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	query := `
-		INSERT INTO items (user_id, title, description, status)
+		INSERT INTO pages (user_id, title, description, status)
 		VALUES ($1, $2, $3, 'active')
 		RETURNING id, user_id, title, description, status, created_at, updated_at
 	`
 	
-	var item models.Item
+	var page models.Page
 	err := h.db.QueryRow(query, userID, req.Title, req.Description).Scan(
-		&item.ID, &item.UserID, &item.Title, &item.Description,
-		&item.Status, &item.CreatedAt, &item.UpdatedAt,
+		&page.ID, &page.UserID, &page.Title, &page.Description,
+		&page.Status, &page.CreatedAt, &page.UpdatedAt,
 	)
 	
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create page"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, item)
+	c.JSON(http.StatusCreated, page)
 }
 
-// UpdateItem updates an existing item
-func (h *ItemsHandler) UpdateItem(c *gin.Context) {
+// UpdatePage updates an existing page
+func (h *PagesHandler) UpdatePage(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	itemID, err := strconv.Atoi(c.Param("id"))
+	pageID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page ID"})
 		return
 	}
 
-	var req models.UpdateItemRequest
+	var req models.UpdatePageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
@@ -151,7 +151,7 @@ func (h *ItemsHandler) UpdateItem(c *gin.Context) {
 
 	// Build dynamic query based on provided fields
 	query := `
-		UPDATE items 
+		UPDATE pages
 		SET updated_at = $1
 	`
 	args := []interface{}{time.Now()}
@@ -176,47 +176,47 @@ func (h *ItemsHandler) UpdateItem(c *gin.Context) {
 	}
 
 	query += ` WHERE id = $` + strconv.Itoa(argIndex) + ` AND user_id = $` + strconv.Itoa(argIndex+1)
-	args = append(args, itemID, userID)
+	args = append(args, pageID, userID)
 
 	query += ` RETURNING id, user_id, title, description, status, created_at, updated_at`
 
-	var item models.Item
+	var page models.Page
 	err = h.db.QueryRow(query, args...).Scan(
-		&item.ID, &item.UserID, &item.Title, &item.Description,
-		&item.Status, &item.CreatedAt, &item.UpdatedAt,
+		&page.ID, &page.UserID, &page.Title, &page.Description,
+		&page.Status, &page.CreatedAt, &page.UpdatedAt,
 	)
 	
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update page"})
 		return
 	}
 
-	c.JSON(http.StatusOK, item)
+	c.JSON(http.StatusOK, page)
 }
 
-// DeleteItem deletes an item
-func (h *ItemsHandler) DeleteItem(c *gin.Context) {
+// DeletePage deletes an page
+func (h *PagesHandler) DeletePage(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	if userID == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	itemID, err := strconv.Atoi(c.Param("id"))
+	pageID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page ID"})
 		return
 	}
 
-	query := `DELETE FROM items WHERE id = $1 AND user_id = $2`
+	query := `DELETE FROM pages WHERE id = $1 AND user_id = $2`
 	
-	result, err := h.db.Exec(query, itemID, userID)
+	result, err := h.db.Exec(query, pageID, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete page"})
 		return
 	}
 
@@ -227,9 +227,9 @@ func (h *ItemsHandler) DeleteItem(c *gin.Context) {
 	}
 
 	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Page not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Page deleted successfully"})
 }

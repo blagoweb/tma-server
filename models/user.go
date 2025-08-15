@@ -30,7 +30,7 @@ type AuthResponse struct {
 	User  User   `json:"user"`
 }
 
-type Item struct {
+type Page struct {
 	ID          int       `json:"id" db:"id"`
 	UserID      int       `json:"user_id" db:"user_id"`
 	Title       string    `json:"title" db:"title"`
@@ -40,12 +40,12 @@ type Item struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-type CreateItemRequest struct {
+type CreatePageRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description"`
 }
 
-type UpdateItemRequest struct {
+type UpdatePageRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Status      string `json:"status"`
