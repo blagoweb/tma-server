@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"tma/models"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JWTManager struct {
@@ -53,25 +54,28 @@ func (j *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 	})
 
 	if err != nil {
+		fmt.Printf("JWT ValidateToken: Parse error: %v\n", err)
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		fmt.Printf("JWT ValidateToken: Token is valid for user ID: %d\n", claims.UserID)
 		return claims, nil
 	}
 
+	fmt.Printf("JWT ValidateToken: Token is invalid\n")
 	return nil, fmt.Errorf("invalid token")
 }
 
 // TelegramUserData represents the user data structure from Telegram init_data
 type TelegramUserData struct {
-	ID                int64  `json:"id"`
-	FirstName         string `json:"first_name"`
-	LastName          string `json:"last_name"`
-	Username          string `json:"username"`
-	LanguageCode      string `json:"language_code"`
-	AllowsWriteToPM   bool   `json:"allows_write_to_pm"`
-	PhotoURL          string `json:"photo_url"`
+	ID              int64  `json:"id"`
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	Username        string `json:"username"`
+	LanguageCode    string `json:"language_code"`
+	AllowsWriteToPM bool   `json:"allows_write_to_pm"`
+	PhotoURL        string `json:"photo_url"`
 }
 
 // ValidateTelegramInitData validates Telegram Mini App init data

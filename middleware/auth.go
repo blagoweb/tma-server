@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -10,8 +11,11 @@ import (
 
 func AuthMiddleware(jwtManager *auth.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log.Printf("AuthMiddleware: Processing request to %s", c.Request.URL.Path)
+		
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			log.Printf("AuthMiddleware: No Authorization header")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			c.Abort()
 			return
@@ -20,20 +24,25 @@ func AuthMiddleware(jwtManager *auth.JWTManager) gin.HandlerFunc {
 		// Check if the header starts with "Bearer "
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			log.Printf("AuthMiddleware: Invalid authorization header format")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
 			c.Abort()
 			return
 		}
 
 		tokenString := tokenParts[1]
+		log.Printf("AuthMiddleware: Token received: %s...", tokenString[:10])
 
 		// Validate the token
 		claims, err := jwtManager.ValidateToken(tokenString)
 		if err != nil {
+			log.Printf("AuthMiddleware: Token validation failed: %v", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
+
+		log.Printf("AuthMiddleware: Token validated successfully for user ID: %d", claims.UserID)
 
 		// Set user information in context
 		c.Set("user_id", claims.UserID)

@@ -45,6 +45,18 @@ func (j JSONData) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON - для десериализации из JSON
 func (j *JSONData) UnmarshalJSON(data []byte) error {
+	// Проверяем, что это валидный JSON
+	if len(data) == 0 {
+		*j = nil
+		return nil
+	}
+
+	// Проверяем, что это не строка "null"
+	if string(data) == "null" {
+		*j = nil
+		return nil
+	}
+
 	*j = JSONData(data)
 	return nil
 }

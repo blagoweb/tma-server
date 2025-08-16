@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -98,19 +99,28 @@ func (h *PagesHandler) GetPage(c *gin.Context) {
 
 // CreatePage creates a new page
 func (h *PagesHandler) CreatePage(c *gin.Context) {
+	// Log the request
+	log.Printf("CreatePage: Starting request processing")
+	
 	userID := c.GetInt("user_id")
+	log.Printf("CreatePage: User ID from context: %d", userID)
+	
 	if userID == 0 {
+		log.Printf("CreatePage: User not authenticated")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
 	var req models.CreatePageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		log.Printf("CreatePage: Failed to bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
 
-		query := `
+	log.Printf("CreatePage: Request data - Title: %s, JSONData: %v", req.Title, req.JSONData)
+
+	query := `
 		INSERT INTO pages (user_id, title, json_data)
 		VALUES ($1, $2, $3)
 		RETURNING id, user_id, title, json_data, created_at, updated_at
@@ -123,10 +133,12 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create page"})
+		log.Printf("CreatePage: Database error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create page", "details": err.Error()})
 		return
 	}
 
+	log.Printf("CreatePage: Successfully created page with ID: %d", page.ID)
 	c.JSON(http.StatusCreated, page)
 }
 
