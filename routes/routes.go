@@ -1,10 +1,11 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
+	"tma/auth"
 	"tma/handlers"
 	"tma/middleware"
-	"tma/auth"
+
+	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(
@@ -35,6 +36,12 @@ func SetupRoutes(
 			auth.POST("/telegram/test", authHandler.TestAuth) // Test endpoint without hash validation
 		}
 
+		// Public pages routes (no authentication required)
+		pages := api.Group("/pages")
+		{
+			pages.GET("/:id", pagesHandler.GetPage)
+		}
+
 		// Protected routes (authentication required)
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware(jwtManager))
@@ -45,14 +52,13 @@ func SetupRoutes(
 				user.GET("/profile", authHandler.GetProfile)
 			}
 
-			// Pages routes
-			pages := protected.Group("/pages")
+			// Protected pages routes
+			protectedPages := protected.Group("/pages")
 			{
-				pages.GET("", pagesHandler.GetPages)
-				pages.GET("/:id", pagesHandler.GetPage)
-				pages.POST("", pagesHandler.CreatePage)
-				pages.PUT("/:id", pagesHandler.UpdatePage)
-				pages.DELETE("/:id", pagesHandler.DeletePage)
+				protectedPages.GET("", pagesHandler.GetPages)
+				protectedPages.POST("", pagesHandler.CreatePage)
+				protectedPages.PUT("/:id", pagesHandler.UpdatePage)
+				protectedPages.DELETE("/:id", pagesHandler.DeletePage)
 			}
 		}
 	}
