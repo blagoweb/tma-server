@@ -28,7 +28,7 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 	}
 
 	query := `
-		SELECT id, user_id, title, created_at, updated_at
+		SELECT id, user_id, title, json_data, created_at, updated_at
 		FROM pages
 		WHERE user_id = $1 
 		ORDER BY created_at DESC
@@ -45,7 +45,7 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 	for rows.Next() {
 		var page models.Page
 		err := rows.Scan(
-			&page.ID, &page.UserID, &page.Title,
+			&page.ID, &page.UserID, &page.Title, &page.JSONData,
 			&page.CreatedAt, &page.UpdatedAt,
 		)
 		if err != nil {
@@ -73,14 +73,14 @@ func (h *PagesHandler) GetPage(c *gin.Context) {
 	}
 
 		query := `
-		SELECT id, user_id, title, created_at, updated_at
+		SELECT id, user_id, title, json_data, created_at, updated_at
 		FROM pages
 		WHERE id = $1 AND user_id = $2
 	`
 	
 	var page models.Page
 	err = h.db.QueryRow(query, pageID, userID).Scan(
-		&page.ID, &page.UserID, &page.Title,
+		&page.ID, &page.UserID, &page.Title, &page.JSONData,
 		&page.CreatedAt, &page.UpdatedAt,
 	)
 
@@ -111,14 +111,14 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 	}
 
 		query := `
-		INSERT INTO pages (user_id, title)
-		VALUES ($1, $2)
-		RETURNING id, user_id, title, created_at, updated_at
+		INSERT INTO pages (user_id, title, json_data)
+		VALUES ($1, $2, $3)
+		RETURNING id, user_id, title, json_data, created_at, updated_at
 	`
 	
 	var page models.Page
-	err := h.db.QueryRow(query, userID, req.Title).Scan(
-		&page.ID, &page.UserID, &page.Title,
+	err := h.db.QueryRow(query, userID, req.Title, req.JSONData).Scan(
+		&page.ID, &page.UserID, &page.Title, &page.JSONData,
 		&page.CreatedAt, &page.UpdatedAt,
 	)
 
@@ -164,14 +164,20 @@ func (h *PagesHandler) UpdatePage(c *gin.Context) {
 		argIndex++
 	}
 
+	if req.JSONData != nil {
+		query += `, json_data = $` + strconv.Itoa(argIndex)
+		args = append(args, req.JSONData)
+		argIndex++
+	}
+
 	query += ` WHERE id = $` + strconv.Itoa(argIndex) + ` AND user_id = $` + strconv.Itoa(argIndex+1)
 	args = append(args, pageID, userID)
 
-	query += ` RETURNING id, user_id, title, created_at, updated_at`
+	query += ` RETURNING id, user_id, title, json_data, created_at, updated_at`
 
 	var page models.Page
 	err = h.db.QueryRow(query, args...).Scan(
-		&page.ID, &page.UserID, &page.Title,
+		&page.ID, &page.UserID, &page.Title, &page.JSONData,
 		&page.CreatedAt, &page.UpdatedAt,
 	)
 

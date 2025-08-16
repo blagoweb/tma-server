@@ -65,6 +65,7 @@ func initTables(db *sql.DB) error {
 		id SERIAL PRIMARY KEY,
 		user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
 		title VARCHAR(255) NOT NULL,
+		json_data JSONB,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
