@@ -102,6 +102,49 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 	// Log the request
 	log.Printf("CreatePage: Starting request processing")
 	
+	var err error
+	
+	// Check database connection
+	if err = h.db.Ping(); err != nil {
+		log.Printf("CreatePage: Database connection error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection failed"})
+		return
+	}
+	
+	// Check if pages table exists
+	var tableExists bool
+	err = h.db.QueryRow("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'pages')").Scan(&tableExists)
+	if err != nil {
+		log.Printf("CreatePage: Error checking table existence: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database schema error"})
+		return
+	}
+	
+	if !tableExists {
+		log.Printf("CreatePage: Pages table does not exist")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pages table not found"})
+		return
+	}
+	
+	// Check table structure
+	rows, err := h.db.Query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'pages' ORDER BY ordinal_position")
+	if err != nil {
+		log.Printf("CreatePage: Error checking table structure: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database schema error"})
+		return
+	}
+	defer rows.Close()
+	
+	log.Printf("CreatePage: Pages table structure:")
+	for rows.Next() {
+		var columnName, dataType string
+		if err := rows.Scan(&columnName, &dataType); err != nil {
+			log.Printf("CreatePage: Error scanning column info: %v", err)
+			continue
+		}
+		log.Printf("  - %s: %s", columnName, dataType)
+	}
+	
 	userID := c.GetInt("user_id")
 	log.Printf("CreatePage: User ID from context: %d", userID)
 	
@@ -126,14 +169,17 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		RETURNING id, user_id, title, json_data, created_at, updated_at
 	`
 	
+	log.Printf("CreatePage: Executing SQL query with userID=%d, title='%s'", userID, req.Title)
+	
 	var page models.Page
-	err := h.db.QueryRow(query, userID, req.Title, req.JSONData).Scan(
+	err = h.db.QueryRow(query, userID, req.Title, req.JSONData).Scan(
 		&page.ID, &page.UserID, &page.Title, &page.JSONData,
 		&page.CreatedAt, &page.UpdatedAt,
 	)
 
 	if err != nil {
 		log.Printf("CreatePage: Database error: %v", err)
+		log.Printf("CreatePage: Error type: %T", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create page", "details": err.Error()})
 		return
 	}

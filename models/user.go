@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -14,6 +15,14 @@ func (j JSONData) Value() (driver.Value, error) {
 	if j == nil {
 		return nil, nil
 	}
+
+	// Логируем, что отправляется в БД
+	value := string(j)
+	if len(value) > 100 {
+		value = value[:100] + "..."
+	}
+	fmt.Printf("JSONData.Value(): Sending to DB: %s\n", value)
+
 	return string(j), nil
 }
 
@@ -55,6 +64,12 @@ func (j *JSONData) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		*j = nil
 		return nil
+	}
+
+	// Валидируем JSON перед сохранением
+	var temp interface{}
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
 	}
 
 	*j = JSONData(data)
