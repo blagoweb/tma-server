@@ -29,6 +29,11 @@ func New(databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to initialize tables: %w", err)
 	}
 
+	// Run migrations
+	if err := runMigrations(db); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+
 	return &Database{DB: db}, nil
 }
 
@@ -79,5 +84,38 @@ func initTables(db *sql.DB) error {
 	}
 
 	log.Println("Database tables initialized successfully")
+	return nil
+}
+
+func runMigrations(db *sql.DB) error {
+	log.Println("Running database migrations...")
+
+	// Migration 1: Add json_data column to pages table if it doesn't exist
+	addJSONDataColumn := `
+	DO $$ 
+	BEGIN 
+		-- Check if pages table exists
+		IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'pages') THEN
+			-- Check if json_data column exists
+			IF NOT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'pages' AND column_name = 'json_data'
+			) THEN 
+				ALTER TABLE pages ADD COLUMN json_data JSONB;
+				RAISE NOTICE 'Added json_data column to pages table';
+			ELSE 
+				RAISE NOTICE 'json_data column already exists in pages table';
+			END IF;
+		ELSE
+			RAISE NOTICE 'pages table does not exist, will be created by initTables';
+		END IF;
+	END $$;
+	`
+
+	if _, err := db.Exec(addJSONDataColumn); err != nil {
+		return fmt.Errorf("failed to add json_data column: %w", err)
+	}
+
+	log.Println("Database migrations completed successfully")
 	return nil
 }
