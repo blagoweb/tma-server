@@ -21,7 +21,7 @@ func SetupRoutes(
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"status": "ok",
+			"status":  "ok",
 			"message": "Telegram Mini App API is running",
 		})
 	})
@@ -36,11 +36,8 @@ func SetupRoutes(
 			auth.POST("/telegram/test", authHandler.TestAuth) // Test endpoint without hash validation
 		}
 
-		// Public pages routes (no authentication required)
-		pages := api.Group("/pages")
-		{
-			pages.GET("/:id", pagesHandler.GetPage)
-		}
+		// Public page route (no authentication required)
+		api.GET("/pages/:id", pagesHandler.GetPage)
 
 		// Protected routes (authentication required)
 		protected := api.Group("/")
