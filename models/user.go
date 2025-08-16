@@ -31,22 +31,17 @@ type AuthResponse struct {
 }
 
 type Page struct {
-	ID          int       `json:"id" db:"id"`
-	UserID      int       `json:"user_id" db:"user_id"`
-	Title       string    `json:"title" db:"title"`
-	Description string    `json:"description" db:"description"`
-	Status      string    `json:"status" db:"status"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID        int       `json:"id" db:"id"`
+	UserID    int       `json:"user_id" db:"user_id"`
+	Title     string    `json:"title" db:"title"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type CreatePageRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Description string `json:"description"`
+	Title string `json:"title" binding:"required"`
 }
 
 type UpdatePageRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
+	Title string `json:"title"`
 }

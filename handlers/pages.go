@@ -28,7 +28,7 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 	}
 
 	query := `
-		SELECT id, user_id, title, description, status, created_at, updated_at
+		SELECT id, user_id, title, created_at, updated_at
 		FROM pages
 		WHERE user_id = $1 
 		ORDER BY created_at DESC
@@ -45,8 +45,8 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 	for rows.Next() {
 		var page models.Page
 		err := rows.Scan(
-			&page.ID, &page.UserID, &page.Title, &page.Description,
-			&page.Status, &page.CreatedAt, &page.UpdatedAt,
+			&page.ID, &page.UserID, &page.Title,
+			&page.CreatedAt, &page.UpdatedAt,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan page"})
@@ -72,16 +72,16 @@ func (h *PagesHandler) GetPage(c *gin.Context) {
 		return
 	}
 
-	query := `
-		SELECT id, user_id, title, description, status, created_at, updated_at
+		query := `
+		SELECT id, user_id, title, created_at, updated_at
 		FROM pages
 		WHERE id = $1 AND user_id = $2
 	`
-
+	
 	var page models.Page
 	err = h.db.QueryRow(query, pageID, userID).Scan(
-		&page.ID, &page.UserID, &page.Title, &page.Description,
-		&page.Status, &page.CreatedAt, &page.UpdatedAt,
+		&page.ID, &page.UserID, &page.Title,
+		&page.CreatedAt, &page.UpdatedAt,
 	)
 
 	if err != nil {
@@ -110,16 +110,16 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		return
 	}
 
-	query := `
-		INSERT INTO pages (user_id, title, description, status)
-		VALUES ($1, $2, $3, 'active')
-		RETURNING id, user_id, title, description, status, created_at, updated_at
+		query := `
+		INSERT INTO pages (user_id, title)
+		VALUES ($1, $2)
+		RETURNING id, user_id, title, created_at, updated_at
 	`
-
+	
 	var page models.Page
-	err := h.db.QueryRow(query, userID, req.Title, req.Description).Scan(
-		&page.ID, &page.UserID, &page.Title, &page.Description,
-		&page.Status, &page.CreatedAt, &page.UpdatedAt,
+	err := h.db.QueryRow(query, userID, req.Title).Scan(
+		&page.ID, &page.UserID, &page.Title,
+		&page.CreatedAt, &page.UpdatedAt,
 	)
 
 	if err != nil {
@@ -164,27 +164,15 @@ func (h *PagesHandler) UpdatePage(c *gin.Context) {
 		argIndex++
 	}
 
-	if req.Description != "" {
-		query += `, description = $` + strconv.Itoa(argIndex)
-		args = append(args, req.Description)
-		argIndex++
-	}
-
-	if req.Status != "" {
-		query += `, status = $` + strconv.Itoa(argIndex)
-		args = append(args, req.Status)
-		argIndex++
-	}
-
 	query += ` WHERE id = $` + strconv.Itoa(argIndex) + ` AND user_id = $` + strconv.Itoa(argIndex+1)
 	args = append(args, pageID, userID)
 
-	query += ` RETURNING id, user_id, title, description, status, created_at, updated_at`
+	query += ` RETURNING id, user_id, title, created_at, updated_at`
 
 	var page models.Page
 	err = h.db.QueryRow(query, args...).Scan(
-		&page.ID, &page.UserID, &page.Title, &page.Description,
-		&page.Status, &page.CreatedAt, &page.UpdatedAt,
+		&page.ID, &page.UserID, &page.Title,
+		&page.CreatedAt, &page.UpdatedAt,
 	)
 
 	if err != nil {
