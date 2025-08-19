@@ -61,26 +61,20 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 
 // GetPage returns a specific page by ID
 func (h *PagesHandler) GetPage(c *gin.Context) {
-	userID := c.GetInt("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
 	pageID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page ID"})
 		return
 	}
 
-		query := `
+	query := `
 		SELECT id, user_id, title, json_data, created_at, updated_at
 		FROM pages
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1
 	`
-	
+
 	var page models.Page
-	err = h.db.QueryRow(query, pageID, userID).Scan(
+	err = h.db.QueryRow(query, pageID).Scan(
 		&page.ID, &page.UserID, &page.Title, &page.JSONData,
 		&page.CreatedAt, &page.UpdatedAt,
 	)
@@ -101,16 +95,16 @@ func (h *PagesHandler) GetPage(c *gin.Context) {
 func (h *PagesHandler) CreatePage(c *gin.Context) {
 	// Log the request
 	log.Printf("CreatePage: Starting request processing")
-	
+
 	var err error
-	
+
 	// Check database connection
 	if err = h.db.Ping(); err != nil {
 		log.Printf("CreatePage: Database connection error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection failed"})
 		return
 	}
-	
+
 	// Check if pages table exists
 	var tableExists bool
 	err = h.db.QueryRow("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'pages')").Scan(&tableExists)
@@ -119,13 +113,13 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database schema error"})
 		return
 	}
-	
+
 	if !tableExists {
 		log.Printf("CreatePage: Pages table does not exist")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pages table not found"})
 		return
 	}
-	
+
 	// Check table structure
 	rows, err := h.db.Query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'pages' ORDER BY ordinal_position")
 	if err != nil {
@@ -134,7 +128,7 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		return
 	}
 	defer rows.Close()
-	
+
 	log.Printf("CreatePage: Pages table structure:")
 	for rows.Next() {
 		var columnName, dataType string
@@ -144,10 +138,10 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		}
 		log.Printf("  - %s: %s", columnName, dataType)
 	}
-	
+
 	userID := c.GetInt("user_id")
 	log.Printf("CreatePage: User ID from context: %d", userID)
-	
+
 	if userID == 0 {
 		log.Printf("CreatePage: User not authenticated")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -168,9 +162,9 @@ func (h *PagesHandler) CreatePage(c *gin.Context) {
 		VALUES ($1, $2, $3)
 		RETURNING id, user_id, title, json_data, created_at, updated_at
 	`
-	
+
 	log.Printf("CreatePage: Executing SQL query with userID=%d, title='%s'", userID, req.Title)
-	
+
 	var page models.Page
 	err = h.db.QueryRow(query, userID, req.Title, req.JSONData).Scan(
 		&page.ID, &page.UserID, &page.Title, &page.JSONData,
