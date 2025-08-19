@@ -61,12 +61,6 @@ func (h *PagesHandler) GetPages(c *gin.Context) {
 
 // GetPage returns a specific page by ID
 func (h *PagesHandler) GetPage(c *gin.Context) {
-	userID := c.GetInt("user_id")
-	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
 	pageID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page ID"})
@@ -80,7 +74,7 @@ func (h *PagesHandler) GetPage(c *gin.Context) {
 	`
 	
 	var page models.Page
-	err = h.db.QueryRow(query, pageID, userID).Scan(
+	err = h.db.QueryRow(query, pageID).Scan(
 		&page.ID, &page.UserID, &page.Title, &page.JSONData,
 		&page.CreatedAt, &page.UpdatedAt,
 	)
